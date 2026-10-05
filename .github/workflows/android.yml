@@ -21,8 +21,8 @@ jobs:
           rm -rf android-project
           mkdir -p android-project
           unzip -o PubDartsNight_Android_v2_FIXED.zip -d android-project
-          echo "Contents:"
-          find android-project -maxdepth 5 -type f
+          echo "Android project contents:"
+          find android-project -maxdepth 4 -type f
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -35,29 +35,28 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Find project and fix JVM target
+      - name: Fix Java and Kotlin JVM targets
         run: |
-          PROJECT_DIR="$(dirname "$(find android-project -type f -name settings.gradle -o -name settings.gradle.kts | head -n 1)")"
-          echo "Android project found at: $PROJECT_DIR"
+          cd android-project/pubdarts_fix
 
-          APP_GRADLE="$PROJECT_DIR/app/build.gradle.kts"
+          cat >> app/build.gradle.kts <<'EOF'
 
-          echo "" >> "$APP_GRADLE"
-          echo 'tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {' >> "$APP_GRADLE"
-          echo '    kotlinOptions.jvmTarget = "1.8"' >> "$APP_GRADLE"
-          echo '}' >> "$APP_GRADLE"
+          tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+              kotlinOptions.jvmTarget = "1.8"
+          }
+          EOF
 
-          echo "Updated build.gradle.kts:"
-          tail -n 15 "$APP_GRADLE"
+          echo "JVM target fix added."
+          tail -n 15 app/build.gradle.kts
 
       - name: Build APK
         run: |
-          PROJECT_DIR="$(dirname "$(find android-project -type f -name settings.gradle -o -name settings.gradle.kts | head -n 1)")"
-          echo "Building project at: $PROJECT_DIR"
-          cd "$PROJECT_DIR"
+          cd android-project/pubdarts_fix
           gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Pub-Darts
+          name: Pub-Darts-Night-APK
+          path: android-project/pubdarts_fix/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

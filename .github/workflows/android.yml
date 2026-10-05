@@ -32,7 +32,9 @@ jobs:
 
       - name: Build APK
         run: |
-          cd android-project
+          PROJECT_DIR="$(dirname "$(find android-project -type f \( -name settings.gradle -o -name settings.gradle.kts \) | head -n 1)")"
+          echo "Android project found at: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
           gradle assembleDebug --stacktrace
 
       - name: Upload APK

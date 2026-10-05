@@ -1,0 +1,53 @@
+name: Build Pub Darts Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Unzip Android project
+        run: |
+          mkdir -p android-project
+          unzip -o PubDartsNight_Android_v1.zip -d android-project
+          echo "Contents:"
+          find android-project -maxdepth 4 -type f
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Find and build project
+        run: |
+          PROJECT_DIR="$(dirname "$(find android-project -type f -name gradlew | head -n 1)")"
+
+          if [ -z "$PROJECT_DIR" ] || [ "$PROJECT_DIR" = "." ]; then
+            echo "ERROR: gradlew could not be found."
+            find android-project -type f
+            exit 1
+          fi
+
+          echo "Android project found at: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pub-Darts-Night-APK
+          path: android-project/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

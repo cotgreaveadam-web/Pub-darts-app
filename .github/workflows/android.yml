@@ -17,8 +17,8 @@ jobs:
       - name: Unzip Android project
         run: |
           mkdir -p android-project
-          unzip -o PubDartsNight_Android_v1.zip -d android-project
-          echo "Contents:"
+       unzip -o PubDartsNight_Android_v2_FIXED.zip -d android-project
+          echo "unzip -o PubDartsNight_Android_v2_FIXED.zip -d android-project:"
           find android-project -maxdepth 5 -type f
 
       - name: Set up Java 17

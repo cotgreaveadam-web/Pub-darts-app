@@ -18,6 +18,7 @@ jobs:
 
       - name: Unzip Android project
         run: |
+          rm -rf android-project
           mkdir -p android-project
           unzip -o PubDartsNight_Android_v2_FIXED.zip -d android-project
           echo "Contents:"
@@ -34,16 +35,29 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Find project and fix JVM target
+        run: |
+          PROJECT_DIR="$(dirname "$(find android-project -type f -name settings.gradle -o -name settings.gradle.kts | head -n 1)")"
+          echo "Android project found at: $PROJECT_DIR"
+
+          APP_GRADLE="$PROJECT_DIR/app/build.gradle.kts"
+
+          echo "" >> "$APP_GRADLE"
+          echo 'tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {' >> "$APP_GRADLE"
+          echo '    kotlinOptions.jvmTarget = "1.8"' >> "$APP_GRADLE"
+          echo '}' >> "$APP_GRADLE"
+
+          echo "Updated build.gradle.kts:"
+          tail -n 15 "$APP_GRADLE"
+
       - name: Build APK
         run: |
-          PROJECT_DIR="$(dirname "$(find android-project -type f \( -name settings.gradle -o -name settings.gradle.kts \) | head -n 1)")"
-          echo "Android project found at: $PROJECT_DIR"
+          PROJECT_DIR="$(dirname "$(find android-project -type f -name settings.gradle -o -name settings.gradle.kts | head -n 1)")"
+          echo "Building project at: $PROJECT_DIR"
           cd "$PROJECT_DIR"
           gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Pub-Darts-Night-APK
-          path: android-project/**/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
+          name: Pub-Darts
